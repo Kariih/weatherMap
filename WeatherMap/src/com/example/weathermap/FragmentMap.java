@@ -7,6 +7,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 
@@ -17,11 +18,12 @@ import org.json.JSONObject;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.widget.Toast;
+
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMap.OnMapClickListener;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -37,6 +39,7 @@ public class FragmentMap extends MapFragment {
 	Context context;
 	String symbolIcon;
 	public static String markerMap;
+	
 
 	@Override
 	public void onActivityCreated(Bundle bundle) {
@@ -87,6 +90,9 @@ public class FragmentMap extends MapFragment {
 		String array;
 		MainActivity main;
 		String date;
+		String locationDate;
+		ArrayList<Weather> weatherList = new ArrayList<Weather>();
+		StoreWeatherAdapter dbAdapter;
 		
 		public JsonTask(Context context) {
 				this.context = context;
@@ -125,6 +131,7 @@ public class FragmentMap extends MapFragment {
 			@Override
 			protected void onPostExecute(String result) {
 				JSONObject json = null;
+				dbAdapter = new StoreWeatherAdapter(context);
 			
 				try {
 					
@@ -139,11 +146,12 @@ public class FragmentMap extends MapFragment {
 					    JSONObject times = time.getJSONObject(i);
 					    location = times.getJSONObject("location");
 					    symbol = times.getString("symbol");
+					    locationDate = times.getString("to");
 					    latitude = location.getDouble("latitude");
 					    longitude = location.getDouble("longitude");
-					    String array = times.toString();
 						JSONObject temperature = location.getJSONObject("temperature");
 						valueTemp = temperature.getInt("value");
+						weatherList.add(new Weather(valueTemp, locationDate ,symbol));
 					}
 					LatLng point = new LatLng(latitude, longitude);
 					addMarker(point);
@@ -151,7 +159,7 @@ public class FragmentMap extends MapFragment {
 					Calendar c = Calendar.getInstance();
 					SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss dd.MM.yy");
 					date = df.format(c.getTime());
-					aWeather = new Weather(latitude, longitude, date, symbol);
+					aWeather = new Weather(latitude, longitude, date);
 					MainActivity.placeList.add(aWeather.toString());
 					MainActivity.markerList.add(aWeather);
 					
@@ -159,7 +167,12 @@ public class FragmentMap extends MapFragment {
 				} catch (JSONException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
-				}				
+				}	
+				
+
+				dbAdapter.insertPlace(aWeather);
+				dbAdapter.insertWeather(weatherList);
+				dbAdapter.close();
 				
 			}
 

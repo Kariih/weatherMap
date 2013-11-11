@@ -27,6 +27,11 @@ public class Weather {
 		setDate(date);
 		setWeatherType(symbol);
 	}
+	public Weather(int temperature, String date, String symbol) {
+		setTemperature(temperature);
+		setDate(date);
+		setWeatherType(symbol);
+	}
 	
 	public String getWeatherString() {
 		return weatherString;
@@ -83,12 +88,7 @@ public class Weather {
 	public void setLon(double lon) {
 		this.lonitude = lon;
 	}
-
-	public String toString(double lat) {
-		return "lat: " + lat;
-	}
 	public String toString(){
 		return "Lat: " + latitude + " Lng: " + lonitude + "\nDate: " + date;
 	}
-
 }
