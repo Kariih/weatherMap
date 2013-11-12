@@ -1,36 +1,45 @@
 package com.example.weathermap;
 
-import java.util.ArrayList;
-import com.google.android.gms.maps.model.CameraPosition;
-import com.google.android.gms.maps.model.LatLng;
+import java.io.File;
+
+import com.google.android.gms.maps.GoogleMap;
 import android.app.ActionBar;
 import android.app.ActionBar.Tab;
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
+import android.content.Context;
+import android.content.ContextWrapper;
 import android.os.Bundle;
-import android.widget.TextView;
 
 public class MainActivity extends Activity {
 
-	public static StoreWeatherAdapter dbAdapter;
+	StoreWeatherAdapter dbAdapter;
 	FragmentMap mapfrag;
-	private CameraPosition cp;
-
-	StoreWeatherAdapter weatherAdapter;
-	public static ArrayList<String> placeList = new ArrayList<String>();
-	public static ArrayList<Weather> markerList = new ArrayList<Weather>();
+	GoogleMap map;
+	Context context; 
+	
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-
-		FragmentMap mapInfo = new FragmentMap();
+		context = this;
+		mapfrag = new FragmentMap();
 		tabs();
-
+		
+		File database= getApplicationContext().getDatabasePath("weatherDb");
+		if (!database.exists()) {
+			System.out.println("lager database");
+			dbAdapter = new StoreWeatherAdapter(context);
+			dbAdapter.close();
+		} else {
+			System.out.println("eksisterer");
+		}
+		
+		
 	}
-
+	
 	public void tabs() {
 		ActionBar actionBar = getActionBar();
 		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
@@ -49,21 +58,6 @@ public class MainActivity extends Activity {
 		actionBar.addTab(weatherTab);
 
 	}
-
-	public void onPause() {
-		mapfrag.onPause();
-		super.onPause();
-
-		cp = mapfrag.map.getCameraPosition();
-		mapfrag = null;
-	}
-	private void addMapMarkers() {
-		for (Weather marker : markerList) {
-			LatLng laln = new LatLng(marker.getLat(), marker.getLon());
-			mapfrag.addMarker(laln, marker.getWeatherType());
-	}
-	}
-		
 	private class ThisTabListener implements ActionBar.TabListener {
 
 		Fragment fragment;

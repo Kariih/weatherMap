@@ -14,7 +14,7 @@ import android.widget.Toast;
 public class StoreWeatherAdapter {
 	FragmentMap myAsyncData = new FragmentMap();
 	
-	public static final String KEY_ID = "_id";
+	public static final String KEY_ID = "id";
 	public static final String KEY_SYMBOL = "symbol";
 	public static final String KEY_TEMPERATURE = "temperature";
 	public static final String KEY_TIME_DATE = "date_time";
@@ -23,9 +23,9 @@ public class StoreWeatherAdapter {
 	public static final String KEY_LON = "longitude";
 	public static final String KEY_TIME = "date";
 
-	public static final String[] ALL_KEYS_PLACE = new String[] { KEY_ID,
+	public static final String[] ALL_KEYS_PLACE = new String[] { KEY_ID, KEY_SYMBOL,
 			KEY_LAT, KEY_LON, KEY_TIME };
-	public static final String[] ALL_KEYS_WEATHER = new String[] { KEY_ID,
+	public static final String[] ALL_KEYS_WEATHER = new String[] { KEY_ID, 
 		KEY_TEMPERATURE, KEY_TIME_DATE, KEY_SYMBOL };
 
 	public static final String DATABASE_NAME = "weatherDb";
@@ -53,6 +53,7 @@ public class StoreWeatherAdapter {
 	public long insertPlace(Weather place) {
 
 		ContentValues value = new ContentValues();
+		value.put(KEY_SYMBOL, place.getWeatherType());
 		value.put(KEY_LAT, place.getLat());
 		value.put(KEY_LON, place.getLon());
 		value.put(KEY_TIME, place.getDate());
@@ -133,12 +134,13 @@ public class StoreWeatherAdapter {
 				+ " ("
 				+ KEY_ID + " NUMBER NOT NULL,"
 				+ KEY_TEMPERATURE + " NUMBER NOT NULL,"
-				+ KEY_SYMBOL + " NUMBER NOT NULL,"
-				+ KEY_TIME_DATE + " NUMBER NOT NULL);";
+				+ KEY_SYMBOL + " STRING NOT NULL,"
+				+ KEY_TIME_DATE + " TEXT NOT NULL);";
 
 		private static final String DATABASE_CREATE_SQL_PLACE = "CREATE TABLE "
 				+ DATABASE_TABLE_PLACE + " (" 
 				+ KEY_ID + " INTEGER PRIMARY KEY,"
+				+ KEY_SYMBOL + " STRING NOT NULL,"
 				+ KEY_LAT + " REAL NOT NULL," 
 				+ KEY_LON + " REAL NOT NULL,"
 				+ KEY_TIME + " TEXT NOT NULL);";

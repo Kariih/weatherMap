@@ -1,6 +1,7 @@
 package com.example.weathermap;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
@@ -15,11 +16,18 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.app.FragmentTransaction;
+import android.app.ProgressDialog;
 import android.content.Context;
+import android.database.Cursor;
+import android.location.Address;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.ListView;
 import android.widget.Toast;
 
+import com.google.android.gms.internal.p;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMap.OnMapClickListener;
 import com.google.android.gms.maps.MapFragment;
@@ -28,7 +36,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-public class FragmentMap extends MapFragment {
+public class FragmentMap extends MapFragment implements OnMapClickListener {
 
 	GoogleMap map;
 	double clickedLat;
@@ -39,41 +47,57 @@ public class FragmentMap extends MapFragment {
 	Context context;
 	String symbolIcon;
 	public static String markerMap;
-	
+	StoreWeatherAdapter dbAdapter;
+	Cursor c;
 
 	@Override
 	public void onActivityCreated(Bundle bundle) {
 		super.onActivityCreated(bundle);
 		context = getActivity().getApplicationContext();
-
 		map = getMap();
 		map.setMyLocationEnabled(true);
-		
-		map.setOnMapClickListener(new OnMapClickListener() {
-
-			@Override
-			public void onMapClick(LatLng point) {
-				clickedLat = point.latitude;
-				clickedLng = point.longitude;
-				jasonTask = new JsonTask(context);
-				jasonTask
-						.execute("http://weathermap-nith.appspot.com/locationforecast?lat="
-								+ clickedLat + "&lon=" + clickedLng);
-			}	
-		});
+		map.setOnMapClickListener(this);
+		File database= getActivity().getApplicationContext().getDatabasePath("weatherDb");
+		if (database.exists()) {
+			System.out.println("funnet");
+			addMarkers();
+		} else {
+			System.out.println("ikke funnet");
+		}
+			
 
 	}
-	public void addMarker(LatLng point) {
-		symbolIcon = "img_" + jasonTask.symbol;
-		Marker marker = map.addMarker(new MarkerOptions().position(point).icon(BitmapDescriptorFactory
-				   .fromResource(getResources().getIdentifier(symbolIcon,"drawable", getActivity().getPackageName()))));
-	}
-	public void addMarker(LatLng point, String symbolIcon2) {
-		symbolIcon2 = "img_" + jasonTask.symbol;
-		Marker marker = map.addMarker(new MarkerOptions().position(point).icon(BitmapDescriptorFactory
-				   .fromResource(getResources().getIdentifier(symbolIcon,"drawable", getActivity().getPackageName()))));
+	public void addMarkers(){
+		 dbAdapter = new StoreWeatherAdapter(context);
+		 double lat;
+		 double lng;
+		 String symbol;
+		 LatLng point;
+		 	
+		    Cursor c = dbAdapter.getAllRowsPlace();
+		    
+		    if(c.moveToFirst()){
+		    do{
+		    	lat = c.getDouble(c.getColumnIndex("latitude"));
+		    	lng = c.getDouble(c.getColumnIndex("longitude"));
+		    	symbol  = c.getString(c.getColumnIndex("symbol"));
+		    	point = new LatLng(lat, lng);
+		    	symbolIcon = "img_" + symbol;
+	            map.addMarker(new MarkerOptions().position(point).icon(BitmapDescriptorFactory
+	                               .fromResource(getResources().getIdentifier(symbolIcon,"drawable", getActivity().getPackageName()))));
+		    }while(c.moveToNext());
+		    dbAdapter.close();
+	}else System.out.println("yaaay");
 	}
 	
+	public void onMapClick(LatLng point) {
+		clickedLat = point.latitude;
+		clickedLng = point.longitude;
+		jasonTask = new JsonTask(context);
+		jasonTask
+				.execute("http://weathermap-nith.appspot.com/locationforecast?lat="
+						+ clickedLat + "&lon=" + clickedLng);
+	}
 	public class JsonTask extends AsyncTask<String, Void, String> {
 		
 		
@@ -85,7 +109,7 @@ public class FragmentMap extends MapFragment {
 		double longitude = 0;
 		double latitude = 0;
 		int valueTemp;
-		Weather aWeather;
+		Weather aWeather = null;
 		FragmentMap map = new FragmentMap();
 		String array;
 		MainActivity main;
@@ -93,6 +117,7 @@ public class FragmentMap extends MapFragment {
 		String locationDate;
 		ArrayList<Weather> weatherList = new ArrayList<Weather>();
 		StoreWeatherAdapter dbAdapter;
+		ProgressDialog dialog;
 		
 		public JsonTask(Context context) {
 				this.context = context;
@@ -127,9 +152,16 @@ public class FragmentMap extends MapFragment {
 				
 				return null;
 			}
-
 			@Override
-			protected void onPostExecute(String result) {
+			protected void onPreExecute() {
+		        dialog = new ProgressDialog(getActivity());
+		        dialog.setMessage("Loading...");
+		        dialog.show();
+		    }
+			
+			@Override
+			protected void onPostExecute(String result){ 
+				dialog.dismiss();
 				JSONObject json = null;
 				dbAdapter = new StoreWeatherAdapter(context);
 			
@@ -141,6 +173,9 @@ public class FragmentMap extends MapFragment {
 					JSONArray time = product.getJSONArray("time");
 					JSONObject location = null;
 					
+					Calendar c = Calendar.getInstance();
+					SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss dd.MM.yy");
+					date = df.format(c.getTime());
 					
 					for (int i=0; i<time.length(); i++) {
 					    JSONObject times = time.getJSONObject(i);
@@ -150,18 +185,11 @@ public class FragmentMap extends MapFragment {
 					    latitude = location.getDouble("latitude");
 					    longitude = location.getDouble("longitude");
 						JSONObject temperature = location.getJSONObject("temperature");
+						if(aWeather == null)
+							aWeather = new Weather(latitude, longitude, date, symbol);
 						valueTemp = temperature.getInt("value");
 						weatherList.add(new Weather(valueTemp, locationDate ,symbol));
 					}
-					LatLng point = new LatLng(latitude, longitude);
-					addMarker(point);
-					
-					Calendar c = Calendar.getInstance();
-					SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss dd.MM.yy");
-					date = df.format(c.getTime());
-					aWeather = new Weather(latitude, longitude, date);
-					MainActivity.placeList.add(aWeather.toString());
-					MainActivity.markerList.add(aWeather);
 					
 					
 				} catch (JSONException e) {
@@ -173,8 +201,9 @@ public class FragmentMap extends MapFragment {
 				dbAdapter.insertPlace(aWeather);
 				dbAdapter.insertWeather(weatherList);
 				dbAdapter.close();
+                addMarkers();
 				
 			}
-
+			
 		}
 }

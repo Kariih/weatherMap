@@ -5,7 +5,7 @@ import java.util.List;
 
 public class Weather {
 
-	public List<Weather> weatherArray = new ArrayList<Weather>();
+	private int id;
 	private String weatherString;
 	private int temperature;
 	private String symbol;
@@ -15,11 +15,17 @@ public class Weather {
 
 	public Weather() {
 	}
-
 	public Weather(double latitude, double longitude, String date) {
 		setLat(latitude);
 		setLon(longitude);
 		setDate(date);
+	}
+	
+	public Weather(double latitude, double longitude, String date, int id) {
+		setLat(latitude);
+		setLon(longitude);
+		setDate(date);
+		setId(id);
 	}
 	public Weather(double latitude, double longitude, String date, String symbol) {
 		setLat(latitude);
@@ -65,12 +71,12 @@ public class Weather {
 		this.symbol = symbol;
 	}
 
-	public List<Weather> getWeatherArray() {
-		return weatherArray;
+	public int getId() {
+		return id;
 	}
 
-	public void setWeatherArray(List<Weather> weatherArray) {
-		this.weatherArray = weatherArray;
+	public void setId(int id) {
+		this.id = id;
 	}
 
 	public double getLat() {
@@ -90,5 +96,8 @@ public class Weather {
 	}
 	public String toString(){
 		return "Lat: " + latitude + " Lng: " + lonitude + "\nDate: " + date;
+	}
+	public String getWeatherToString(){
+		return "Time:\t " + date + "\n Temperature:\t " + temperature;
 	}
 }
